@@ -1,0 +1,58 @@
+- hosts: 192.168.43.110
+  gather_facts: false
+  tasks:
+    - name: Adding docker-ce repositories
+      yum_repository:
+        name: docker-ce
+        description: EPEL YUM repo
+        baseurl: https://download.docker.com/linux/centos/7/x86_64/stable/
+        enabled: yes
+        gpgcheck: no
+
+
+    - name: Downloading  python3
+      package:
+        name:
+          - python3
+
+    - name: Pip installing docker-py dependencies
+      pip:
+        name: docker-py
+
+    - name: Disable SELinux
+      selinux:
+        state: disabled
+
+    - name: Downloading Docker-CE
+      yum:
+             name: "docker-ce-18.03.0.*"
+             state: present
+
+    - name: Enabling services docker
+      service:
+        name: docker
+        state: started
+
+    - name: Creates directory
+      file:
+        path: /root/ansibleweb
+        state: directory
+
+    - name: Copying files to webserver
+      copy:
+        src: index.html
+        dest: ansibleweb
+
+    - name: pull an image
+      docker_image:
+        name: httpd
+        source: pull
+
+    - name: Creating container
+      docker_container:
+         name: webserver
+         image: httpd
+         state: started
+         ports: 89:80
+         volumes:
+           - /root/ansibleweb/:/usr/local/apache2/htdocs/
